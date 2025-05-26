@@ -3,7 +3,6 @@ use crate::telegram::TelegramClient;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::io::{self, Write};
-use tracing::info;
 
 #[derive(Parser)]
 #[command(name = "mcp-telegram")]
