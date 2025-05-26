@@ -1,0 +1,46 @@
+# Rust build artifacts
+target/
+
+# Cargo lock file (uncomment if this is a library)
+# Cargo.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ruff_cache/
+.mypy_cache/
+
+# Virtual Environment
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.local
+
+# Build and distribution
+dist/
+build/
+*.egg-info/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Backup files
+*.bak
+*.orig
+
+# Misc
+.DS_Store
