@@ -1,0 +1,11 @@
+{
+  "atlassian": {
+    "baseUrl": "https://your-instance.atlassian.net",
+    "email": "your-email@example.com",
+    "token": "your-api-token-here"
+  },
+  "server": {
+    "name": "atlassian-server",
+    "version": "0.1.0"
+  }
+}
