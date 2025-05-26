@@ -1,0 +1,45 @@
+[package]
+name = "github-mcp-server"
+version = "0.1.0"
+edition = "2021"
+authors = ["GitHub Inc."]
+description = "A GitHub MCP server that handles various tools and resources"
+license = "MIT"
+
+[[bin]]
+name = "github-mcp-server"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4.0", features = ["derive", "env"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+url = "2.0"
+base64 = "0.22"
+mime = "0.3"
+uuid = { version = "1.0", features = ["v4"] }
+futures = "0.3"
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+urlencoding = "2.1"
+
+# MCP protocol implementation - using local mock for now
+
+# GitHub API clients - using simple reqwest-based client
+
+# Configuration and CLI
+config = "0.14"
+dirs = "5.0"
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.6"
+tempfile = "3.0"
+
+[features]
+default = []
