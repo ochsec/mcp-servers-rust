@@ -10,12 +10,32 @@ This is a complete port of the [GitHub MCP Server](../github-mcp-server/) from G
 
 ### Tool Categories
 
-- **Repository Tools** (`repos`): Search repositories, read/write files, manage branches
-- **Issue Tools** (`issues`): Create, read, update, and manage GitHub issues  
-- **Pull Request Tools** (`pull_requests`): Create, list, and manage pull requests
-- **User Tools** (`users`): Search and retrieve user information
-- **Context Tools** (`context`): Get authenticated user details (always enabled)
-- **Dynamic Tools** (`dynamic`): Runtime toolset management (always enabled)
+#### **Repository Tools** (`repos`)
+- `search_repositories` - Search for GitHub repositories with filtering and sorting
+- `get_file_contents` - Get contents of a file or directory from a repository
+- `get_repository` - Get detailed information about a repository
+- `create_or_update_file` - Create or update a single file in a repository (write mode only)
+
+#### **Issue Tools** (`issues`)
+- `get_issue` - Get details of a specific issue by number
+- `list_issues` - List and filter repository issues with pagination
+- `create_issue` - Create a new issue with title, body, assignees, and labels (write mode only)
+
+#### **Pull Request Tools** (`pull_requests`)
+- `get_pull_request` - Get details of a specific pull request by number
+- `list_pull_requests` - List and filter repository pull requests with pagination
+- `create_pull_request` - Create a new pull request between branches (write mode only)
+
+#### **User Tools** (`users`)
+- `search_users` - Search for GitHub users with filtering and sorting
+
+#### **Context Tools** (`context`) - Always Enabled
+- `get_me` - Get details of the authenticated user
+
+#### **Dynamic Tools** (`dynamic`) - Always Enabled when `--dynamic-toolsets` is used
+- `list_available_toolsets` - List all available toolsets and their descriptions
+- `get_toolset_tools` - List all tools available in a specific toolset
+- `enable_toolset` - Enable additional toolsets at runtime
 
 ### Resources
 
@@ -135,13 +155,16 @@ src/
 
 ### Dependencies
 
-- **tokio**: Async runtime
-- **serde**: JSON serialization
-- **octocrab**: GitHub REST API client
-- **graphql_client**: GraphQL client for advanced operations
-- **clap**: Command-line interface
-- **tracing**: Structured logging
-- **anyhow**: Error handling
+- **tokio**: Async runtime and I/O
+- **serde**: JSON serialization/deserialization
+- **reqwest**: HTTP client for GitHub API calls
+- **clap**: Command-line interface and argument parsing
+- **tracing**: Structured logging and diagnostics
+- **anyhow**: Error handling and context
+- **chrono**: Date and time handling
+- **base64**: Base64 encoding/decoding for file content
+- **url**: URL parsing and manipulation
+- **urlencoding**: URL encoding for API parameters
 
 ### Testing
 
@@ -164,10 +187,11 @@ RUST_LOG=debug cargo test
 
 ### Implementation Choices
 
-1. **JSON-RPC**: Direct implementation vs using external library
-2. **GitHub API**: Using `octocrab` crate vs `go-github`
-3. **Configuration**: `clap` for CLI vs `cobra`/`viper`
-4. **Logging**: `tracing` ecosystem vs `logrus`
+1. **JSON-RPC**: Direct implementation using serde_json vs using external library
+2. **GitHub API**: Custom reqwest-based client vs `go-github` library
+3. **Configuration**: `clap` for CLI vs `cobra`/`viper` in Go
+4. **Logging**: `tracing` ecosystem vs `logrus` in Go
+5. **Async**: Tokio-based async/await vs Go's goroutines and channels
 
 ## License
 
