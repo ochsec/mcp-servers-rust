@@ -40,7 +40,7 @@ impl Config {
             config.validate()?;
             Ok(config)
         } else {
-            eprintln!("Config file not found at {}, using environment variables", config_path);
+            eprintln!("Config file not found at {}, using environment variables (this is normal when using MCP settings)", config_path);
             let config = Config {
                 atlassian: AtlassianConfig {
                     base_url: env::var("ATLASSIAN_BASE_URL")

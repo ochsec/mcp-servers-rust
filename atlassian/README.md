@@ -33,6 +33,31 @@ The binary will be available at `target/release/atlassian-mcp-server`.
 
 ## Configuration
 
+### MCP Settings Configuration (Recommended)
+
+To use this server with Claude Desktop or other MCP clients, add the following to your `mcp_settings.json` file:
+
+```json
+{
+  "mcpServers": {
+    "atlassian": {
+      "command": "/path/to/atlassian-mcp-server/target/release/atlassian-mcp-server",
+      "env": {
+        "ATLASSIAN_BASE_URL": "https://your-instance.atlassian.net",
+        "ATLASSIAN_EMAIL": "your-email@example.com",
+        "ATLASSIAN_TOKEN": "your-api-token-here"
+      }
+    }
+  }
+}
+```
+
+**Setup Steps:**
+1. Build the server: `cargo build --release`
+2. Get your Atlassian API token (see instructions below)
+3. Update the configuration with your actual values
+4. Update the command path to point to your built binary
+
 ### Option 1: Configuration File
 
 Create a `config/config.json` file (you can copy from `config/config.sample.json`):
