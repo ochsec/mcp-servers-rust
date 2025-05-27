@@ -162,17 +162,18 @@ The Rust implementation maintains the same structure as the original TypeScript 
 
 - **`config.rs`**: Configuration management with support for both file and environment variable configuration
 - **`atlassian.rs`**: Atlassian API client with methods for JIRA and Confluence operations
-- **`main.rs`**: MCP server implementation using the `rmcp` crate with tool definitions
+- **`main.rs`**: MCP server implementation with manual JSON-RPC protocol handling
+- **`mcp_types.rs`**: MCP protocol types and JSON-RPC structures
 
 ## Dependencies
 
-- [`rmcp`](https://crates.io/crates/rmcp): Official Rust MCP SDK
 - [`reqwest`](https://crates.io/crates/reqwest): HTTP client for Atlassian API calls
 - [`serde`](https://crates.io/crates/serde): Serialization/deserialization
 - [`tokio`](https://crates.io/crates/tokio): Async runtime
 - [`tracing`](https://crates.io/crates/tracing): Logging
 - [`anyhow`](https://crates.io/crates/anyhow): Error handling
 - [`clap`](https://crates.io/crates/clap): Command-line argument parsing
+- [`base64`](https://crates.io/crates/base64): Base64 encoding for authentication
 
 ## Differences from TypeScript Version
 
@@ -181,7 +182,7 @@ This Rust implementation provides the same functionality as the original TypeScr
 - **Performance**: Compiled Rust binary for better performance
 - **Memory Safety**: Rust's ownership system prevents common runtime errors
 - **Type Safety**: Strong compile-time type checking
-- **Modern Dependencies**: Uses the latest official `rmcp` crate
+- **Manual MCP Protocol**: Direct JSON-RPC implementation for better compatibility
 
 The API and tool interfaces remain identical to ensure compatibility.
 
