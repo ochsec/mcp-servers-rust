@@ -67,6 +67,24 @@ Set the required environment variable:
 export GITHUB_PERSONAL_ACCESS_TOKEN="your_token_here"
 ```
 
+### MCP Settings Configuration
+
+Add the server to your `mcp_settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "/path/to/target/release/github-mcp-server",
+      "args": ["stdio"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_token_here"
+      }
+    }
+  }
+}
+```
+
 ## Usage
 
 ### Start the MCP Server
