@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crate::mcp::protocol::{
     CallToolRequest, CallToolResult, Content, ListToolsRequest, ListToolsResult, 
-    TextContent, Tool, ToolResult,
+    TextContent, Tool,
 };
 use crate::mcp::server::{Server, ServerOptions};
 use crate::mcp::transport::Transport;
@@ -24,10 +24,8 @@ pub struct MCPProxy {
 impl MCPProxy {
     pub fn new(name: String, openapi_spec: OpenAPI) -> Result<Self> {
         // Get base URL from the OpenAPI spec
-        let base_url = openapi_spec
-            .servers
-            .as_ref()
-            .and_then(|servers| servers.first())
+        let base_url = openapi_spec.servers
+            .first()
             .map(|server| server.url.clone())
             .ok_or_else(|| anyhow::anyhow!("No base URL found in OpenAPI spec"))?;
 

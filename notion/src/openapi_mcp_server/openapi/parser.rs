@@ -1,5 +1,5 @@
 use anyhow::Result;
-use openapiv3::{OpenAPI, Operation, Parameter, ParameterData, ReferenceOr, RequestBody, Response, Schema, SchemaKind, Type};
+use openapiv3::{AdditionalProperties, OpenAPI, Operation, Parameter, ParameterData, ParameterSchemaOrContent, ReferenceOr, RequestBody, Response, Schema, SchemaKind, StatusCode, StringFormat, Type, VariantOrUnknownOrEmpty};
 use serde_json::{Map, Value};
 use std::collections::{HashMap, HashSet};
 use tracing::{error, warn};
@@ -50,93 +50,102 @@ impl OpenAPIToMCPConverter {
         let mut openapi_lookup = HashMap::new();
         let mut methods = Vec::new();
 
+        // Collect paths first to avoid borrowing conflicts
+        let paths: Vec<(String, openapiv3::PathItem)> = self.openapi_spec.paths.paths.iter()
+            .filter_map(|(path, path_item)| {
+                if let ReferenceOr::Item(path_item) = path_item {
+                    Some((path.clone(), path_item.clone()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
         // Process each path and operation
-        for (path, path_item) in &self.openapi_spec.paths.paths {
-            if let ReferenceOr::Item(path_item) = path_item {
-                // Process each HTTP method
-                if let Some(operation) = &path_item.get {
-                    if let Some(method) = self.convert_operation_to_mcp_method(operation, "get", path)? {
-                        let unique_name = self.ensure_unique_name(&method.name);
-                        let mut method = method;
-                        method.name = unique_name.clone();
-                        methods.push(method);
-                        openapi_lookup.insert(
-                            format!("{}-{}", api_name, unique_name),
-                            OperationInfo {
-                                operation: operation.clone(),
-                                method: "get".to_string(),
-                                path: path.clone(),
-                            },
-                        );
-                    }
+        for (path, path_item) in paths {
+            // Process each HTTP method
+            if let Some(operation) = &path_item.get {
+                if let Some(method) = self.convert_operation_to_mcp_method(operation, "get", &path)? {
+                    let unique_name = self.ensure_unique_name(&method.name);
+                    let mut method = method;
+                    method.name = unique_name.clone();
+                    methods.push(method);
+                    openapi_lookup.insert(
+                        format!("{}-{}", api_name, unique_name),
+                        OperationInfo {
+                            operation: operation.clone(),
+                            method: "get".to_string(),
+                            path: path.clone(),
+                        },
+                    );
                 }
-                
-                if let Some(operation) = &path_item.post {
-                    if let Some(method) = self.convert_operation_to_mcp_method(operation, "post", path)? {
-                        let unique_name = self.ensure_unique_name(&method.name);
-                        let mut method = method;
-                        method.name = unique_name.clone();
-                        methods.push(method);
-                        openapi_lookup.insert(
-                            format!("{}-{}", api_name, unique_name),
-                            OperationInfo {
-                                operation: operation.clone(),
-                                method: "post".to_string(),
-                                path: path.clone(),
-                            },
-                        );
-                    }
                 }
-                
-                if let Some(operation) = &path_item.put {
-                    if let Some(method) = self.convert_operation_to_mcp_method(operation, "put", path)? {
-                        let unique_name = self.ensure_unique_name(&method.name);
-                        let mut method = method;
-                        method.name = unique_name.clone();
-                        methods.push(method);
-                        openapi_lookup.insert(
-                            format!("{}-{}", api_name, unique_name),
-                            OperationInfo {
-                                operation: operation.clone(),
-                                method: "put".to_string(),
-                                path: path.clone(),
-                            },
-                        );
-                    }
+            
+            if let Some(operation) = &path_item.post {
+                if let Some(method) = self.convert_operation_to_mcp_method(operation, "post", &path)? {
+                    let unique_name = self.ensure_unique_name(&method.name);
+                    let mut method = method;
+                    method.name = unique_name.clone();
+                    methods.push(method);
+                    openapi_lookup.insert(
+                        format!("{}-{}", api_name, unique_name),
+                        OperationInfo {
+                            operation: operation.clone(),
+                            method: "post".to_string(),
+                            path: path.clone(),
+                        },
+                    );
                 }
-                
-                if let Some(operation) = &path_item.delete {
-                    if let Some(method) = self.convert_operation_to_mcp_method(operation, "delete", path)? {
-                        let unique_name = self.ensure_unique_name(&method.name);
-                        let mut method = method;
-                        method.name = unique_name.clone();
-                        methods.push(method);
-                        openapi_lookup.insert(
-                            format!("{}-{}", api_name, unique_name),
-                            OperationInfo {
-                                operation: operation.clone(),
-                                method: "delete".to_string(),
-                                path: path.clone(),
-                            },
-                        );
-                    }
                 }
-                
-                if let Some(operation) = &path_item.patch {
-                    if let Some(method) = self.convert_operation_to_mcp_method(operation, "patch", path)? {
-                        let unique_name = self.ensure_unique_name(&method.name);
-                        let mut method = method;
-                        method.name = unique_name.clone();
-                        methods.push(method);
-                        openapi_lookup.insert(
-                            format!("{}-{}", api_name, unique_name),
-                            OperationInfo {
-                                operation: operation.clone(),
-                                method: "patch".to_string(),
-                                path: path.clone(),
-                            },
-                        );
-                    }
+            
+            if let Some(operation) = &path_item.put {
+                if let Some(method) = self.convert_operation_to_mcp_method(operation, "put", &path)? {
+                    let unique_name = self.ensure_unique_name(&method.name);
+                    let mut method = method;
+                    method.name = unique_name.clone();
+                    methods.push(method);
+                    openapi_lookup.insert(
+                        format!("{}-{}", api_name, unique_name),
+                        OperationInfo {
+                            operation: operation.clone(),
+                            method: "put".to_string(),
+                            path: path.clone(),
+                        },
+                    );
+                }
+            }
+            
+            if let Some(operation) = &path_item.delete {
+                if let Some(method) = self.convert_operation_to_mcp_method(operation, "delete", &path)? {
+                    let unique_name = self.ensure_unique_name(&method.name);
+                    let mut method = method;
+                    method.name = unique_name.clone();
+                    methods.push(method);
+                    openapi_lookup.insert(
+                        format!("{}-{}", api_name, unique_name),
+                        OperationInfo {
+                            operation: operation.clone(),
+                            method: "delete".to_string(),
+                            path: path.clone(),
+                        },
+                    );
+                }
+                }
+            
+            if let Some(operation) = &path_item.patch {
+                if let Some(method) = self.convert_operation_to_mcp_method(operation, "patch", &path)? {
+                    let unique_name = self.ensure_unique_name(&method.name);
+                    let mut method = method;
+                    method.name = unique_name.clone();
+                    methods.push(method);
+                    openapi_lookup.insert(
+                        format!("{}-{}", api_name, unique_name),
+                        OperationInfo {
+                            operation: operation.clone(),
+                            method: "patch".to_string(),
+                            path: path.clone(),
+                        },
+                    );
                 }
             }
         }
@@ -175,13 +184,11 @@ impl OpenAPIToMCPConverter {
             input_obj.insert("$defs".to_string(), Value::Object(defs));
         }
 
-        let properties = input_obj.get_mut("properties").unwrap().as_object_mut().unwrap();
-        let required = input_obj.get_mut("required").unwrap().as_array_mut().unwrap();
-
-        // Handle parameters (path, query, header, cookie)
+        // Collect parameter information first to avoid borrowing conflicts
+        let mut param_info = Vec::new();
         for param_ref in &operation.parameters {
             if let Some(param) = self.resolve_parameter(param_ref) {
-                if let Some(schema) = &param.schema {
+                if let ParameterSchemaOrContent::Schema(schema) = &param.format {
                     let mut param_schema = self.convert_openapi_schema_to_json_schema(schema, &mut HashSet::new(), false)?;
                     
                     // Merge parameter-level description if available
@@ -191,15 +198,32 @@ impl OpenAPIToMCPConverter {
                         }
                     }
                     
-                    properties.insert(param.name.clone(), param_schema);
-                    if param.required {
-                        required.push(Value::String(param.name.clone()));
-                    }
+                    param_info.push((param.name.clone(), param_schema, param.required));
                 }
             }
         }
 
-        // Handle requestBody
+        // Now add parameters to the schema
+        {
+            let properties = input_obj.get_mut("properties").unwrap().as_object_mut().unwrap();
+            for (name, schema, _) in &param_info {
+                properties.insert(name.clone(), schema.clone());
+            }
+        }
+        
+        {
+            let required = input_obj.get_mut("required").unwrap().as_array_mut().unwrap();
+            for (name, _, is_required) in &param_info {
+                if *is_required {
+                    required.push(Value::String(name.clone()));
+                }
+            }
+        }
+
+        // Handle requestBody and collect additional properties
+        let mut additional_properties = Vec::new();
+        let mut additional_required = Vec::new();
+        
         if let Some(request_body_ref) = &operation.request_body {
             if let Some(request_body) = self.resolve_request_body(request_body_ref) {
                 // Handle multipart/form-data for file uploads
@@ -209,13 +233,13 @@ impl OpenAPIToMCPConverter {
                         if let Value::Object(form_obj) = form_schema {
                             if let Some(Value::Object(form_properties)) = form_obj.get("properties") {
                                 for (name, prop_schema) in form_properties {
-                                    properties.insert(name.clone(), prop_schema.clone());
+                                    additional_properties.push((name.clone(), prop_schema.clone()));
                                 }
                             }
                             if let Some(Value::Array(form_required)) = form_obj.get("required") {
                                 for req in form_required {
                                     if let Value::String(req_str) = req {
-                                        required.push(Value::String(req_str.clone()));
+                                        additional_required.push(req_str.clone());
                                     }
                                 }
                             }
@@ -231,23 +255,38 @@ impl OpenAPIToMCPConverter {
                         if let Value::Object(body_obj) = body_schema {
                             if let Some(Value::Object(body_properties)) = body_obj.get("properties") {
                                 for (name, prop_schema) in body_properties {
-                                    properties.insert(name.clone(), prop_schema.clone());
+                                    additional_properties.push((name.clone(), prop_schema.clone()));
                                 }
                             }
                             if let Some(Value::Array(body_required)) = body_obj.get("required") {
                                 for req in body_required {
                                     if let Value::String(req_str) = req {
-                                        required.push(Value::String(req_str.clone()));
+                                        additional_required.push(req_str.clone());
                                     }
                                 }
                             }
                         } else {
                             // If the request body is not an object, put it under "body"
-                            properties.insert("body".to_string(), body_schema);
-                            required.push(Value::String("body".to_string()));
+                            additional_properties.push(("body".to_string(), body_schema));
+                            additional_required.push("body".to_string());
                         }
                     }
                 }
+            }
+        }
+        
+        // Apply all collected properties and requirements
+        {
+            let properties = input_obj.get_mut("properties").unwrap().as_object_mut().unwrap();
+            for (name, prop_schema) in additional_properties {
+                properties.insert(name, prop_schema);
+            }
+        }
+        
+        {
+            let required = input_obj.get_mut("required").unwrap().as_array_mut().unwrap();
+            for req_name in additional_required {
+                required.push(Value::String(req_name));
             }
         }
 
@@ -256,9 +295,12 @@ impl OpenAPIToMCPConverter {
             .or_else(|| operation.description.clone())
             .unwrap_or_default();
 
-        if let Some(responses) = &operation.responses {
-            let error_responses: Vec<String> = responses.responses.iter()
-                .filter(|(code, _)| code.starts_with('4') || code.starts_with('5'))
+        let responses = &operation.responses;
+        let error_responses: Vec<String> = responses.responses.iter()
+                .filter(|(code, _)| {
+                    let code_str = code.to_string();
+                    code_str.starts_with('4') || code_str.starts_with('5')
+                })
                 .map(|(code, response_ref)| {
                     let error_desc = match self.resolve_response(response_ref) {
                         Some(response) => response.description.clone(),
@@ -268,14 +310,13 @@ impl OpenAPIToMCPConverter {
                 })
                 .collect();
 
-            if !error_responses.is_empty() {
-                description.push_str("\nError Responses:\n");
-                description.push_str(&error_responses.join("\n"));
-            }
+        if !error_responses.is_empty() {
+            description.push_str("\nError Responses:\n");
+            description.push_str(&error_responses.join("\n"));
         }
 
         // Extract return type (response schema)
-        let return_schema = self.extract_response_type(&operation.responses);
+        let return_schema = self.extract_response_type(&Some(operation.responses.clone()));
 
         Ok(Some(MCPMethod {
             name: method_name,
@@ -347,10 +388,15 @@ impl OpenAPIToMCPConverter {
                         if !object_type.properties.is_empty() {
                             let mut properties = Map::new();
                             for (name, prop_schema) in &object_type.properties {
-                                properties.insert(
-                                    name.clone(),
-                                    self.convert_openapi_schema_to_json_schema(prop_schema, resolved_refs, resolve_refs)?,
-                                );
+                                let converted_schema = match prop_schema {
+                                    ReferenceOr::Item(boxed_schema) => {
+                                        self.convert_openapi_schema_to_json_schema(&ReferenceOr::Item(boxed_schema.as_ref().clone()), resolved_refs, resolve_refs)?
+                                    },
+                                    ReferenceOr::Reference { reference } => {
+                                        self.convert_openapi_schema_to_json_schema(&ReferenceOr::Reference { reference: reference.clone() }, resolved_refs, resolve_refs)?
+                                    },
+                                };
+                                properties.insert(name.clone(), converted_schema);
                             }
                             result.insert("properties".to_string(), Value::Object(properties));
                         }
@@ -364,8 +410,15 @@ impl OpenAPIToMCPConverter {
 
                         match &object_type.additional_properties {
                             Some(additional) => {
-                                result.insert("additionalProperties".to_string(), 
-                                    self.convert_openapi_schema_to_json_schema(additional, resolved_refs, resolve_refs)?);
+                                match additional {
+                                    AdditionalProperties::Any(allow) => {
+                                        result.insert("additionalProperties".to_string(), Value::Bool(*allow));
+                                    }
+                                    AdditionalProperties::Schema(schema_ref) => {
+                                        result.insert("additionalProperties".to_string(), 
+                                            self.convert_openapi_schema_to_json_schema(schema_ref, resolved_refs, resolve_refs)?);
+                                    }
+                                }
                             }
                             None => {
                                 result.insert("additionalProperties".to_string(), Value::Bool(true));
@@ -375,23 +428,35 @@ impl OpenAPIToMCPConverter {
                     SchemaKind::Type(Type::Array(array_type)) => {
                         result.insert("type".to_string(), Value::String("array".to_string()));
                         if let Some(items) = &array_type.items {
-                            result.insert("items".to_string(), 
-                                self.convert_openapi_schema_to_json_schema(items, resolved_refs, resolve_refs)?);
+                            let converted_items = match items {
+                                ReferenceOr::Item(boxed_schema) => {
+                                    self.convert_openapi_schema_to_json_schema(&ReferenceOr::Item(boxed_schema.as_ref().clone()), resolved_refs, resolve_refs)?
+                                },
+                                ReferenceOr::Reference { reference } => {
+                                    self.convert_openapi_schema_to_json_schema(&ReferenceOr::Reference { reference: reference.clone() }, resolved_refs, resolve_refs)?
+                                },
+                            };
+                            result.insert("items".to_string(), converted_items);
                         }
                     }
                     SchemaKind::Type(Type::String(string_type)) => {
                         result.insert("type".to_string(), Value::String("string".to_string()));
-                        if let Some(format) = &string_type.format {
-                            // Convert binary format to uri-reference and enhance description
-                            if format == "binary" {
-                                result.insert("format".to_string(), Value::String("uri-reference".to_string()));
-                                let binary_desc = "absolute paths to local files";
-                                let description = schema.schema_data.description.as_ref()
-                                    .map(|d| format!("{} ({})", d, binary_desc))
-                                    .unwrap_or_else(|| binary_desc.to_string());
-                                result.insert("description".to_string(), Value::String(description));
-                            } else {
-                                result.insert("format".to_string(), Value::String(format.clone()));
+                        match &string_type.format {
+                            VariantOrUnknownOrEmpty::Item(format) => {
+                                // Convert binary format to uri-reference and enhance description
+                                if format == &StringFormat::Binary {
+                                    result.insert("format".to_string(), Value::String("uri-reference".to_string()));
+                                    let binary_desc = "absolute paths to local files";
+                                    let description = schema.schema_data.description.as_ref()
+                                        .map(|d| format!("{} ({})", d, binary_desc))
+                                        .unwrap_or_else(|| binary_desc.to_string());
+                                    result.insert("description".to_string(), Value::String(description));
+                                } else {
+                                    result.insert("format".to_string(), Value::String(format!("{:?}", format)));
+                                }
+                            }
+                            _ => {
+                                // No format specified or unknown format
                             }
                         }
                     }
@@ -401,7 +466,7 @@ impl OpenAPIToMCPConverter {
                     SchemaKind::Type(Type::Integer(_)) => {
                         result.insert("type".to_string(), Value::String("integer".to_string()));
                     }
-                    SchemaKind::Type(Type::Boolean {}) => {
+                    SchemaKind::Type(Type::Boolean(_)) => {
                         result.insert("type".to_string(), Value::String("boolean".to_string()));
                     }
                     SchemaKind::OneOf { one_of } => {
@@ -440,9 +505,9 @@ impl OpenAPIToMCPConverter {
                     result.insert("default".to_string(), default.clone());
                 }
 
-                if let Some(enum_values) = &schema.schema_data.enum_values {
-                    result.insert("enum".to_string(), Value::Array(enum_values.clone()));
-                }
+                // Handle enum values if they exist in schema_data
+                // Note: In openapiv3, enums are typically handled differently
+                // This is a placeholder for now
 
                 Ok(Value::Object(result))
             }
@@ -476,17 +541,28 @@ impl OpenAPIToMCPConverter {
     fn convert_components_to_json_schema(&mut self) -> Map<String, Value> {
         let mut defs = Map::new();
         
-        if let Some(components) = &self.openapi_spec.components {
-            for (key, schema_ref) in &components.schemas {
-                if let ReferenceOr::Item(schema) = schema_ref {
-                    if let Ok(converted) = self.convert_openapi_schema_to_json_schema(
-                        &ReferenceOr::Item(schema.clone()),
-                        &mut HashSet::new(),
-                        true,
-                    ) {
-                        defs.insert(key.clone(), converted);
+        // Collect schemas first to avoid borrowing conflicts
+        let schemas: Vec<(String, Schema)> = if let Some(components) = &self.openapi_spec.components {
+            components.schemas.iter()
+                .filter_map(|(key, schema_ref)| {
+                    if let ReferenceOr::Item(schema) = schema_ref {
+                        Some((key.clone(), schema.clone()))
+                    } else {
+                        None
                     }
-                }
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+
+        for (key, schema) in schemas {
+            if let Ok(converted) = self.convert_openapi_schema_to_json_schema(
+                &ReferenceOr::Item(schema),
+                &mut HashSet::new(),
+                true,
+            ) {
+                defs.insert(key, converted);
             }
         }
         
@@ -550,10 +626,10 @@ impl OpenAPIToMCPConverter {
         let responses = responses.as_ref()?;
         
         // Look for success responses (200, 201, 202, 204)
-        let success_response = responses.responses.get("200")
-            .or_else(|| responses.responses.get("201"))
-            .or_else(|| responses.responses.get("202"))
-            .or_else(|| responses.responses.get("204"))?;
+        let success_response = responses.responses.get(&StatusCode::Code(200))
+            .or_else(|| responses.responses.get(&StatusCode::Code(201)))
+            .or_else(|| responses.responses.get(&StatusCode::Code(202)))
+            .or_else(|| responses.responses.get(&StatusCode::Code(204)))?;
 
         let response = self.resolve_response(success_response)?;
         

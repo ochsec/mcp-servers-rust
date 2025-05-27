@@ -41,6 +41,7 @@ pub enum HttpClientError {
     OperationError(String),
 }
 
+#[derive(Clone)]
 pub struct HttpClient {
     client: Client,
     config: HttpClientConfig,
